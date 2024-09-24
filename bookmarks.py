@@ -76,7 +76,7 @@ def second_level_bookmark_dict(
 
 if __name__ == "__main__":
     # Lê o arquivo PDF usando o PdfReader
-    reader = PdfReader("diarios/2024/08/20240827-doe-tce.pdf")
+    reader = PdfReader("diarios/2024/09/20240903-doe-tce.pdf")
     
     # Extrai os marcadores de primeiro nível
     first_level_bms = first_level_bookmark_dict(reader.outline, reader, use_labels=True)

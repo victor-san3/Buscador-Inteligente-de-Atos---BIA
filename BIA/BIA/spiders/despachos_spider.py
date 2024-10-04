@@ -5,38 +5,56 @@ class DespachosSpider(scrapy.Spider):
     start_urls = ['https://do.tce.sp.gov.br/sei/modulos/tcesp/boletim/md_boletim_tabloide.php?acao=selecionar_data']
 
     def parse(self, response):
-        # Locate the "DESPACHOS" section
-        despachos_section = response.xpath('//h1[@id="DESPACHOS"]')
+        # Localiza a seção "DESPACHOS"
+        secao_despachos = response.xpath('//h1[@id="DESPACHOS"]')
 
-        # Start from the first sibling of the "DESPACHOS" h1
-        siblings = despachos_section.xpath('following-sibling::*')
+        # Começa a partir do primeiro irmão do h1 "DESPACHOS"
+        irmaos = secao_despachos.xpath('following-sibling::*')
 
-        # Initialize a dictionary to hold the structured data
-        section_data = {'section': 'DESPACHOS', 'subtitles': {}}
+        # Inicializa um dicionário para armazenar os dados estruturados
+        dados_secao = {'secao': 'DESPACHOS', 'subsecoes': {}}
 
-        current_h2 = None
-        for sibling in siblings:
-            # Break the loop if another h1 is encountered
-            if sibling.root.tag == 'h1':
+        h2_atual = None
+        for irmao in irmaos:
+            # Interrompe o loop se outro h1 for encontrado
+            if irmao.root.tag == 'h1':
                 break
 
-            # Process h2 elements
-            if sibling.root.tag == 'h2':
-                current_h2 = sibling.xpath('text()').get()
-                # Initialize a list for the current subtitle if not already present
-                if current_h2 not in section_data['subtitles']:
-                    section_data['subtitles'][current_h2] = []
+            # Processa elementos h2
+            if irmao.root.tag == 'h2':
+                h2_atual = irmao.xpath('text()').get()
+                # Inicializa uma lista para o subtítulo atual se ainda não estiver presente
+                if h2_atual not in dados_secao['subsecoes']:
+                    dados_secao['subsecoes'][h2_atual] = []
 
-            # Process div elements with class "publicacao"
-            elif sibling.root.tag == 'div' and sibling.xpath('@class').get() == 'publicacao':
-                # Extract data from "conteudo" divs within the "publicacao" div
-                conteudo_divs = sibling.xpath('.//div[@class="conteudo"]')
+            # Processa elementos div com classe "publicacao"
+            elif irmao.root.tag == 'div' and irmao.xpath('@class').get() == 'publicacao':
+                # Extrai dados das divs "conteudo" dentro da div "publicacao"
+                divs_conteudo = irmao.xpath('.//div[@class="conteudo"]')
 
-                for conteudo in conteudo_divs:
-                    # Extract the text or any specific data you need from the "conteudo" div
-                    conteudo_text = conteudo.xpath('.//text()').getall()
-                    # Append the content to the current subtitle
-                    section_data['subtitles'][current_h2].append(conteudo_text)
+                for conteudo in divs_conteudo:
+                    # Tenta extrair tabelas com id "pia_processo"
+                    tabelas = conteudo.xpath('.//table[@id="pia_processo"]')
+                    if tabelas:
+                        for tabela in tabelas:
+                            dados_tabela = {}
+                            linhas = tabela.xpath('.//tr')
+                            for linha in linhas:
+                                # Extrai texto de <th> e <td>
+                                chave = linha.xpath('.//th//text()').get()
+                                valor = linha.xpath('.//td//text()').getall()
+                                # Limpa e combina o texto do valor
+                                valor_limpo = ' '.join([v.strip() for v in valor if v.strip()])
+                                if chave and valor_limpo:
+                                    dados_tabela[chave.strip()] = valor_limpo
+                            # Adiciona os dados estruturados da tabela ao subtítulo atual
+                            dados_secao['subsecoes'][h2_atual].append({'conteudo': dados_tabela})
+                    else:
+                        # Extrai outro conteúdo se nenhuma tabela for encontrada
+                        outro_conteudo = conteudo.xpath('.//text()').getall()
+                        conteudo_limpo = ' '.join([texto.strip() for texto in outro_conteudo if texto.strip()])
+                        if conteudo_limpo:
+                            dados_secao['subsecoes'][h2_atual].append({'conteudo': conteudo_limpo})
 
-        # Yield the entire structured data
-        yield section_data
+        # Retorna todos os dados estruturados
+        yield dados_secao

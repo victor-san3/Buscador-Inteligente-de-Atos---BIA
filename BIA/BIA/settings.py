@@ -92,9 +92,16 @@ REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
+from datetime import datetime
+
 FEEDS = {
-    'data/%(name)s.json': {
+    'cadernos/%(time)s_%(name)s.json': {
         'format': 'json',
         'indent': 4,  # Pretty-print with 4 spaces
     },
+}
+
+# Add a custom setting for the timestamp with the desired format
+FEED_EXPORT_PARAMS = {
+    'time': datetime.now().strftime('%Y-%m-%d'),
 }

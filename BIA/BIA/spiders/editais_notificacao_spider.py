@@ -12,7 +12,11 @@ class EditaisNotificacaoSpider(scrapy.Spider):
         irmaos = secao_editais_notificacoes.xpath('following-sibling::*')
 
         # Inicializa um dicionário para armazenar os dados estruturados
-        dados_secao = {'secao': 'EDITAIS DE NOTIFICAÇÃO', 'subsecoes': {}}
+        dados_secao = {'disponibilização': '', 'publicação': '', 'secao': 'EDITAIS DE NOTIFICAÇÃO', 'subsecoes': {}}
+
+        # Extrai a data de disponibilização e a data de publicação
+        dados_secao['disponibilização'] = response.xpath('//*[@id="disponibilizacao-publicacao"]/text()[1]').get()[-10:]
+        dados_secao['publicação'] = response.xpath('//*[@id="disponibilizacao-publicacao"]/text()[2]').get()[-10:]
 
         h2_atual = None
         for irmao in irmaos:

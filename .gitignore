@@ -3,3 +3,4 @@ venv/
 diarios/
 __pycache__/
 *.py[cod]
+*.pyc

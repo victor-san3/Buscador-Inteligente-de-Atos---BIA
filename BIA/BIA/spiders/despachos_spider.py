@@ -12,7 +12,7 @@ class DespachosSpider(scrapy.Spider):
         irmaos = secao_despachos.xpath('following-sibling::*')
 
         # Inicializa um dicionário para armazenar os dados estruturados
-        dados_secao = {'disponibilização': '', 'publicação': '', 'secao': 'ACÓRDÃOS', 'subsecoes': {}}
+        dados_secao = {'disponibilização': '', 'publicação': '', 'secao': 'DESPACHOS', 'subsecoes': {}}
 
         # Extrai a data de disponibilização e a data de publicação
         dados_secao['disponibilização'] = response.xpath('//*[@id="disponibilizacao-publicacao"]/text()[1]').get()[-10:]
@@ -53,6 +53,15 @@ class DespachosSpider(scrapy.Spider):
                                     dados_tabela[chave.strip()] = valor_limpo
                             # Adiciona os dados estruturados da tabela ao subtítulo atual
                             dados_secao['subsecoes'][h2_atual].append({'conteudo': dados_tabela})
+
+                                                        # Extrai outro conteúdo após processar tabelas e adiciona ao mesmo item
+                            outro_conteudo = conteudo.xpath('.//text()[not(ancestor::table)]').getall()
+                            conteudo_limpo = ' '.join([texto.strip() for texto in outro_conteudo if texto.strip()])
+                            if conteudo_limpo:
+                                if isinstance(dados_secao['subsecoes'][h2_atual][-1]['conteudo'], dict):
+                                    dados_secao['subsecoes'][h2_atual][-1]['conteudo']['EXTRATO'] = conteudo_limpo
+                                else:
+                                    dados_secao['subsecoes'][h2_atual][-1]['conteudo'] += ' ' + conteudo_limpo
                     else:
                         # Extrai outro conteúdo se nenhuma tabela for encontrada
                         outro_conteudo = conteudo.xpath('.//text()').getall()
